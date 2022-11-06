@@ -32,61 +32,30 @@ def start_block(update: Update, context: CallbackContext) -> None:
         update (Update)
         context (CallbackContext)
 
-    При "/start" сразу переведёт "stage" в режим
-    ожидания шаблона от пользователя
+    При "/start" сразу переведёт "stage" в режим ожидания гс, 
+    а также отправит шаблоны для разговора
     '''
     user = update.effective_user
     UsersData.check_user(user)
     name = f"Привет, {user.first_name}!\n"
-    UsersData.edit_stage(user, "Wait_template")
-    update.message.reply_html(name + templates.message_greeting,
-                              reply_markup=templates.start_markup)
+    UsersData.edit_stage(user, "Wait_voice")
+    update.message.reply_html(name + templates.message_greeting)
+    update.message.reply_text(templates.message_topics)
 
 
 def main_block(update: Update, context: CallbackContext) -> None:
     '''
-    Главная логика бота при работе с текстом.
-
     Args:
         update (Update)
         context (CallbackContext)
 
-    1) Если пользователь нажал на "Шаблон" -> переведем  "stage"
-    в режим ожидания голосового сообщения
-    2) Если прислал какой-либо текст, а мы ждём шаблон -> переведем  "stage"
-    в режим ожидания голосового сообщения
-    3.1) Если ждем голосовое, но прислали текст -> переведем  "stage"
-    в режим ожидания шаблона (если пользователь хочет поменять текст).
-    3.2) Если не хочет менять шаблон, то в ответ просто пришлет голосовое,
-    обработкой которого занимается функция "voice_block"
-    4) Обработка ошибки, если новый пользователь сразу начал писать в бот без
-    старта (???есть ли этот кейс???)
+    Сразу переведёт "stage" в режим ожидания гс, 
+    а также отправит шаблоны для разговора
     '''
     user = update.effective_user
     UsersData.check_user(user)
-    user_stage = UsersData.get_stage(user)
-    if user_stage == "New":
-        start_block(update, context)
-        return
-
-    user_text = update.message.text
-
-    if update.message.text == "Шаблон":
-        UsersData.edit_stage(user, 'Wait_voice')
-        UsersData.edit_template(user, templates.template_text)
-        update.message.reply_text(templates.template_text)
-        update.message.reply_text(templates.message_get_template,
-                                  reply_markup=ReplyKeyboardRemove())
-
-    elif user_stage == "Wait_template":
-        UsersData.edit_stage(user, 'Wait_voice')
-        UsersData.edit_template(user, user_text)
-        update.message.reply_text(templates.message_voice_wait,
-                                  reply_markup=ReplyKeyboardRemove())
-
-    elif user_stage == "Wait_voice":
-        update.message.reply_text(templates.message_change_template)
-        UsersData.edit_stage(user, 'Wait_template')
+    UsersData.edit_stage(user, "Wait_voice")
+    update.message.reply_text(templates.message_topics)
 
 
 def voice_block(update: Update, context: CallbackContext) -> None:
