@@ -1,32 +1,27 @@
-import json
-import pika
-import sys
-import os
-
 from settings import RABBIT_URL, RABBIT_PORT
 from process_audio import process
+import asyncio
 
-def callback(ch, method, properties, body, args):
-    params = json.loads(body)
-    print(params)
-    result = process(params["file_name"])
-
-
-def send_task():
-    pass
+from aio_pika import connect_robust
+from aio_pika.patterns import RPC
 
 
-def main():
-    input_queue = "voice"
-    conn_params = pika.ConnectionParameters(host=RABBIT_URL, port=RABBIT_PORT)
-    connection = pika.BlockingConnection(conn_params)
-    channel = connection.channel()
-    channel.queue_declare(queue=input_queue)
-    channel.basic_consume(queue=input_queue, on_message_callback=callback, auto_ack=True, arguments={"ty": 5})
+async def main() -> None:
+    connection = await connect_robust(port=RABBIT_PORT, host=RABBIT_URL,
+        client_properties={"connection_name": "callee"},
+    )
 
-    print(' [*] Waiting for messages. To exit press CTRL+C')
-    channel.start_consuming()
+    # Creating channel
+    channel = await connection.channel()
+
+    rpc = await RPC.create(channel)
+    await rpc.register("v", process, auto_delete=True)
+
+    try:
+        await asyncio.Future()
+    finally:
+        await connection.close()
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    asyncio.run(main())
