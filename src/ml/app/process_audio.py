@@ -7,7 +7,8 @@ from settings import FILLER_WORLDS, debug
 
 from logging.handlers import RotatingFileHandler
 from settings import get_logger
-logger = get_logger(logger_name=__file__, handler_adds=RotatingFileHandler(filename="logs/output.logs"))
+logger = get_logger(logger_name=__file__,
+                    handler_adds=RotatingFileHandler(filename="logs/output.logs", maxBytes=2**20))
 
 
 def process(file_pth: str) -> Dict:

@@ -25,8 +25,8 @@ def get_model():
 
 
 def prepare_audio_file(audio_file_path: str):
-    mp3 = AudioSegment.from_file(audio_file_path)
-    if audio_file_path.split(".")[-1] == 'wav':
+    mp3 = AudioSegment.from_file(audio_file_path, format='ogg')
+    if audio_file_path.split(".")[-1] == 'wav_':
         #TODO необходимо, тк *.wav файлы от телеграма по-умолчанию, выдают пустоту
         # ниже выполняется их пересохранение в mp3
         mp3.export(audio_file_path.replace('.wav', '.mp3'), format="mp3")
