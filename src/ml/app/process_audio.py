@@ -25,9 +25,7 @@ def process(file_pth: str) -> Dict:
 
 if __name__ == '__main__':
     for file_pth in ("/home/urev/projects/virtual_voice_teacher/data/audio-2022-11-30 14:30:02.967816.wav",
-                     "/home/urev/projects/virtual_voice_teacher/data/audio-2022-11-30 16:32:32.366352.wav",
-                     "/home/urev/projects/virtual_voice_teacher/data/processed/10_kazinik_10sec.mp3",
-                     "/home/urev/projects/virtual_voice_teacher/data/processed/10_restavrator_10sec.mp3"):
+                     "/home/urev/projects/virtual_voice_teacher/data/audio-2022-11-30 16:32:32.366352.wav",):
         logger.info(f"Started with file: {file_pth}")
         msg = process(file_pth=file_pth)
         logger.debug(f"Result: {msg}")
