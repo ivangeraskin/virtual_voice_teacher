@@ -13,8 +13,23 @@
 apt-get install ffmpeg libavcodec-extra
 ```
 3. Для тестирования:
- - `python api.py` - микросервис с загруженной модель, получает mp_raw_data, на выходе распознанный текст
+ - `python api.py` - микросервис с загруженной модель, получает mp3_raw_data, на выходе распознанный текст
  - `python process_audio.py` - выполнит парочку запросов к модели
+
+4. Фунция `process` реализована
+
+```python
+def process(file_pth: str) -> Dict:
+    mp3_raw_data = prepare_audio_file(audio_file_path=file_pth)
+
+    response = requests.post("http://localhost:8080/recognize", data=mp3_raw_data)
+    response.raise_for_status()
+    recognized_text = response.json().get('recognized_text')
+
+    text_for_ml = add_punctuation_to_recognize_text(recognized_text=recognized_text)
+    text_for_user = filler_word_analyse(text=text_for_ml, filler_words=FILLER_WORLDS)
+    return {"message": text_for_user}
+```
 
 
 Что найдено в процессе разработки:
