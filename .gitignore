@@ -5,3 +5,6 @@
 /notebooks/fm_1_vosk/vosk-model-ru-0.22/
 /src/ml/app/model/
 /src/ml/app/recasepunc/
+**.logs
+**/__pycache__/**
+
