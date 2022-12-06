@@ -4,6 +4,7 @@ import asyncio
 
 from aio_pika import connect_robust
 from aio_pika.patterns import RPC
+from utils import setup_logging
 
 
 async def main() -> None:
@@ -22,6 +23,6 @@ async def main() -> None:
     finally:
         await connection.close()
 
-
 if __name__ == "__main__":
+    setup_logging("INFO")
     asyncio.run(main())

@@ -42,14 +42,18 @@ async def on_shutdown(dp):
 async def process_text(message: Message):
     await message.answer("Привет!")
 
+async def handle_file(file, file_name: str, path: str):
+    await bot.download_file(file_path=file.file_path, destination=f"{path}/{file_name}")
+
 @dp.message_handler(content_types=ContentType.VOICE)
 async def process_audio(message: Message):
-    await message.answer("Аудил")
+    await message.answer("Ваша запись обрабатывается")
 
-    file_name = f"audio-{dt.datetime.now()}.wav"
+    file_name = f"audio-{dt.datetime.now()}.ogg"
     audio_path = os.path.join(path_voice, file_name)
 
-    await message.voice.download(audio_path)
+    voice = await message.voice.get_file()
+    await handle_file(file=voice, file_name=file_name, path=path_voice)
     connection = await connect_robust(host=RABBIT_URL, port=RABBIT_PORT)
 
     async with connection:
@@ -57,7 +61,7 @@ async def process_audio(message: Message):
         channel = await connection.channel()
         rpc = await RPC.create(channel)
         c = await rpc.call("v", kwargs=dict(file_pth=audio_path))
-        await message.answer(c)
+        await message.answer(c.get("message"))
 
 
 def main():
