@@ -9,11 +9,12 @@ from aiogram import Bot, types, executor
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils.executor import start_webhook
-from settings import BOT_TOKEN, RABBIT_URL, RABBIT_PORT
+from settings import BOT_TOKEN, RABBIT_URL, RABBIT_PORT, DB_URL
 import datetime as dt
 import os
 from aio_pika import connect_robust
 from aio_pika.patterns import RPC
+import requests
 
 _logger = logging.getLogger(__name__)
 path_voice = "/voice/"
@@ -60,8 +61,16 @@ async def process_audio(message: Message):
         # Creating channel
         channel = await connection.channel()
         rpc = await RPC.create(channel)
-        c = await rpc.call("v", kwargs=dict(file_pth=audio_path))
-        await message.answer(c.get("message"))
+        reply = await rpc.call("v", kwargs=dict(file_pth=audio_path))
+        await message.answer(reply.get("message"))
+
+    # add record to db here
+    db_record = {"tg_id": message.from_id,
+                 "tg_name": message.from_user.mention,
+                 "file_id": message.voice.file_id,
+                 "comments": reply.get("message")}
+    requests.post(url=DB_URL+"/add_review", json=db_record)
+    print(db_record)
 
 
 def main():
