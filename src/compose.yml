@@ -1,0 +1,59 @@
+version: '3.1'
+
+networks:
+  resys:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=resys
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - resys
+    ports:
+      - "15432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=test@test.org
+      - PGADMIN_DEFAULT_PASSWORD=password
+    ports:
+      - "8001:80"
+    networks:
+      - resys
+
+  #db:
+  #  image: resys:db_v0.1
+  #  environment:
+  #    - DB_NAME=resys
+  #    - DB_ADDRESS=postgres
+  #    - DB_PORT=5432
+  #    - DB_USER=postgres
+  #    - DB_PASSWORD=resys
+  #  networks:
+  #    - resys
+
+  #ml:
+  #  image: resys:ml_v0.1
+  #  networks:
+  #    - resys
+
+  #tg:
+  #  image: resys:tg_v0.1
+  #  ports:
+  #    - "8000:8000"
+  #  environment:
+  #    - BOT_TOKEN=YOUR_TOKEN_HERE
+  #    - RECSYS_URL=ml
+  #    - RECSYS_PORT=8000
+  #    - DB_URL=db
+  #    - DB_PORT=8000
+  #  networks:
+  #    - resys
+
+volumes:
+  postgres:

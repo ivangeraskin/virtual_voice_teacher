@@ -38,11 +38,11 @@ class DBDriver:
         Evaluates path to the db
         :return:
         """
-        _DB_NAME = os.environ.get("DB_NAME")
-        _DB_ADDRESS = os.environ.get("DB_ADDRESS")
-        _DB_PORT = os.environ.get("DB_PORT")
-        _DB_USER = os.environ.get("DB_USER")
-        _DB_PASSWORD = os.environ.get("DB_PASSWORD")
+        _DB_NAME = os.environ["DB_NAME"]
+        _DB_ADDRESS = os.environ["DB_ADDRESS"]
+        _DB_PORT = os.environ["DB_PORT"]
+        _DB_USER = os.environ["DB_USER"]
+        _DB_PASSWORD = os.environ["DB_PASSWORD"]
         return f"postgresql://{_DB_USER}:{_DB_PASSWORD}@{_DB_ADDRESS}:{_DB_PORT}/{_DB_NAME}"
 
 
@@ -54,19 +54,16 @@ class DBDriver:
         :return:
         """
         session = self._sm()
-        user_id = session.query(User.id) \
-                         .filter(User.tg_id == reaction["tg_id"]) \
-                         .first()
-
-        if user_id is None:
-            _logger.warning("User with Tg ID %s is not found.", repr(reaction["tg_id"]))
-            session.close()
-            return None
-
-        user_id = user_id[0]
-
-        review = Review(user_id=user_id,
-                        score=reaction["score"])
+        params = review.dict()
+        if not params.get("score"):
+            params["score"] = -1
+        review = Review(**params)
         session.add(review)
-        session.commit()
-        session.close()
+        try:
+            session.commit()
+            session.close()
+        except Exception as err:
+            _logger.error(repr(err))
+            return -1
+        else:
+            return 0
