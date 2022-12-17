@@ -9,6 +9,13 @@ pgadmin:
                -e PGADMIN_DEFAULT_PASSWORD=password \
                dpage/pgadmin4:latest
 
+build_tg:
+	docker build --tag voice:tg_v0.1 --file ${PWD}/tg/Dockerfile ${PWD}/tg
+
+build_ml:
+	docker build --tag voice:ml_v0.1 --file ${PWD}/ml/Dockerfile ${PWD}/ml
+
+
 build:
 	docker build --tag voice:tg_v0.1 --file ${PWD}/tg/Dockerfile ${PWD}/tg
 	docker build --tag voice:db_v0.1 --file ${PWD}/db/Dockerfile ${PWD}/db
