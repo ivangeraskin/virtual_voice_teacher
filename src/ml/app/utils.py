@@ -1,10 +1,5 @@
-import json
-import subprocess
-import numpy as np
 from functools import lru_cache
-from typing import List
 from vosk import Model, KaldiRecognizer, SetLogLevel
-from pydub import AudioSegment
 
 from settings import AUDIO_FRAME_RATE, N_AUDIO_CHANNELS
 
