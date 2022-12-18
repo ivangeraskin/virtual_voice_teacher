@@ -1,14 +1,20 @@
 import logging
 import os
 import datetime as dt
+import pika
+import json
+import asyncio
 
 from telegram import Update,  ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler
 from telegram.ext import Filters, CallbackContext
+from aio_pika import connect_robust
+from aio_pika.patterns import RPC
+
 
 from classes import Users
 import templates
-
+from settings import BOT_TOKEN, RABBIT_URL, RABBIT_PORT
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -20,6 +26,10 @@ logger = logging.getLogger(__name__)
 UsersData = Users()
 
 path_voice = "/voice/"
+
+updater = Updater(token=BOT_TOKEN)
+dispatcher = updater.dispatcher
+
 if not os.path.exists(path_voice):
     os.makedirs(path_voice)
 
@@ -94,20 +104,66 @@ def voice_block(update: Update, context: CallbackContext) -> None:
         update.message.reply_text("Пришлите новый шаблон!")
 
         audio = voice_obj.get_file().download_as_bytearray()
-        audio_path = f'{path_voice}/audio-{dt.datetime.now()}.wav'
+        send_task2(audio, user.id)
 
-        with open(audio_path, 'wb') as f:
-            f.write(audio)
+async def send_task2(audio, user_id) -> None:
+
+    file_name = f"audio-{dt.datetime.now()}.wav"
+    audio_path = os.path.join(path_voice, file_name)
+
+    # @TODO: process I/O exception?
+    with open(audio_path, 'wb') as f:
+        f.write(audio)
+
+    msg = {"file_name": file_name, "user_id": user_id}
+
+    connection = await connect_robust(host=RABBIT_URL, port=RABBIT_PORT,
+                                      client_properties={"connection_name": "caller"})
+
+    async with connection:
+        # Creating channel
+        channel = await connection.channel()
+        rpc = await RPC.create(channel)
+
+        # Creates tasks by proxy object
+        #for i in range(1000):
+        #    print(await rpc.proxy.multiply(x=100, y=i))
+
+        # Or using create_task method
+        await rpc.call("process_audio", kwargs={"file_name": file_name, "user_id": user_id})
+        #for i in range(1000):
+        #    print(await rpc.call("multiply", kwargs=dict(x=100, y=i)))
+
+        #"amqp://guest:guest@127.0.0.1/",
+
+
+def send_task(audio, user_id):
+    file_name = f"audio-{dt.datetime.now()}.wav"
+    audio_path = os.path.join(path_voice, file_name)
+
+    # @TODO: process I/O exception?
+    with open(audio_path, 'wb') as f:
+        f.write(audio)
+
+    msg = {"file_name": file_name, "user_id": user_id}
+    conn_params = pika.ConnectionParameters(host=RABBIT_URL, port=RABBIT_PORT)
+    conn = pika.BlockingConnection(conn_params)
+    channel = conn.channel()
+    channel.queue_declare(queue="voice")
+    channel.basic_publish(exchange="", routing_key="voice", body=json.dumps(msg))
+    conn.close()
 
 
 def main() -> None:
-    updater = Updater(os.environ.get('TOKEN'))
-    dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start_block))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command,
                                           main_block))
     dispatcher.add_handler(MessageHandler(Filters.voice, voice_block))
+
+
+    #loop = asyncio.get_event_loop()
+    #loop.create_task(get_audio())
 
     updater.start_polling()
     updater.idle()

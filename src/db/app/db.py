@@ -14,20 +14,13 @@ Base = declarative_base()
 _logger = logging.getLogger(__name__)
 
 
-class User(Base):
-    __tablename__ = "user"
-    id = Column(Integer, primary_key=True)
-    tg_id = Column(BigInteger)
-    create_dt = Column(DateTime(timezone=True), server_default=func.now())
-    reactions = relationship("Reaction")
-
-
 class Review(Base):
     __tablename__ = "review"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, "user.id")
+    tg_id = Column(BigInteger)
+    tg_name = Column(String)
     file_id = Column(String)
-    score = Column(Integer)
+    score = Column(Integer, nullable=True)
     comments = Column(String)
     create_dt = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -35,9 +28,9 @@ class Review(Base):
 class DBDriver:
 
     def __init__(self):
+        self._database_url = self._get_db_url()
         self._engine = create_engine(self._database_url)
         self._sm = sessionmaker(bind=self._engine)
-        self._database_url = self._get_db_url()
         Base.metadata.create_all(self._engine)
 
     def _get_db_url(self):
@@ -45,29 +38,15 @@ class DBDriver:
         Evaluates path to the db
         :return:
         """
-        _DB_NAME = os.environ.get("DB_NAME")
-        _DB_ADDRESS = os.environ.get("DB_ADDRESS")
-        _DB_PORT = os.environ.get("DB_PORT")
-        _DB_USER = os.environ.get("DB_USER")
-        _DB_PASSWORD = os.environ.get("DB_PASSWORD")
+        _DB_NAME = os.environ["DB_NAME"]
+        _DB_ADDRESS = os.environ["DB_ADDRESS"]
+        _DB_PORT = os.environ["DB_PORT"]
+        _DB_USER = os.environ["DB_USER"]
+        _DB_PASSWORD = os.environ["DB_PASSWORD"]
         return f"postgresql://{_DB_USER}:{_DB_PASSWORD}@{_DB_ADDRESS}:{_DB_PORT}/{_DB_NAME}"
 
-    def add_user(self, user: Dict):
-        """
-        Add user to the db
-        :param user:
-        :return:
-        """
-        new_user = User(
-            tg_id=int(user["tg_id"])
-        )
 
-        with self._sm() as session:
-            session.add(new_user)
-            session.commit()
-            session.close()
-
-    def add_review(self, reaction: Dict):
+    def add_review(self, review: Dict):
         """
         Add user reaction
 
@@ -75,19 +54,16 @@ class DBDriver:
         :return:
         """
         session = self._sm()
-        user_id = session.query(User.id) \
-                         .filter(User.tg_id == reaction["tg_id"]) \
-                         .first()
-
-        if user_id is None:
-            _logger.warning("User with Tg ID %s is not found.", repr(reaction["tg_id"]))
-            session.close()
-            return None
-
-        user_id = user_id[0]
-
-        review = Review(user_id=user_id,
-                        score=reaction["score"])
+        params = review.dict()
+        if not params.get("score"):
+            params["score"] = -1
+        review = Review(**params)
         session.add(review)
-        session.commit()
-        session.close()
+        try:
+            session.commit()
+            session.close()
+        except Exception as err:
+            _logger.error(repr(err))
+            return -1
+        else:
+            return 0

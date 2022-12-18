@@ -1,0 +1,83 @@
+version: '3.1'
+
+networks:
+  voice:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=resys
+    volumes:
+      - postgres_voice:/var/lib/postgresql/data
+    networks:
+      - voice
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    depends_on:
+      - postgres
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=test@test.org
+      - PGADMIN_DEFAULT_PASSWORD=password
+    ports:
+      - "11234:80"
+    networks:
+      - voice
+
+  db:
+    image: voice:db_v0.1
+    depends_on:
+      - postgres
+    environment:
+      - DB_NAME=voice
+      - DB_ADDRESS=postgres
+      - DB_PORT=5432
+      - DB_USER=voice_user
+      - DB_PASSWORD=voice
+    networks:
+      - voice
+
+  rabbit:
+    image: rabbitmq:3
+    networks:
+      - voice
+
+  ml:
+    image: voice:ml_v0.1
+    depends_on:
+      - rabbit
+      - db
+      - tg
+    networks:
+      - voice
+    volumes:
+      - records_voice:/voice
+    environment:
+      - RABBIT_URL=rabbit
+      - RABBIT_PORT=5672
+
+  tg:
+    image: voice:tg_v0.1
+    depends_on:
+      - rabbit
+      - db
+      - postgres
+      - pgadmin
+    ports:
+      - "8000:8000"
+    environment:
+      - RABBIT_URL=rabbit
+      - RABBIT_PORT=5672
+      - BOT_TOKEN=1479445790:AAGK_NLomCZhkqQKaONrUKSD917JwiZI-yA
+      - DB_URL=db
+      - DB_PORT=8000
+    volumes:
+      - records_voice:/voice
+    networks:
+      - voice
+
+volumes:
+  postgres_voice:
+  records_voice:
