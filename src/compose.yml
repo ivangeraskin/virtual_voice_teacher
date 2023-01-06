@@ -5,26 +5,26 @@ networks:
     driver: bridge
 
 services:
-  postgres:
-    image: postgres
-    environment:
-      - POSTGRES_PASSWORD=resys
-    volumes:
-      - postgres_voice:/var/lib/postgresql/data
-    networks:
-      - voice
+#  postgres:
+#    image: postgres
+#    environment:
+#      - POSTGRES_PASSWORD=resys
+#    volumes:
+#      - postgres_voice:/var/lib/postgresql/data
+#    networks:
+#      - voice
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    depends_on:
-      - postgres
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=test@test.org
-      - PGADMIN_DEFAULT_PASSWORD=password
-    ports:
-      - "11234:80"
-    networks:
-      - voice
+#  pgadmin:
+#    image: dpage/pgadmin4:latest
+#    depends_on:
+#      - postgres
+#    environment:
+#      - PGADMIN_DEFAULT_EMAIL=test@test.org
+#      - PGADMIN_DEFAULT_PASSWORD=password
+#    ports:
+#      - "11234:80"
+#    networks:
+#      - voice
 
   db:
     image: voice:db_v0.1

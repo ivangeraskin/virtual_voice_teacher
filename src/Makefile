@@ -23,8 +23,8 @@ build:
 
 run:
 	docker-compose up -d rabbit
-	docker-compose up -d postgres
-	docker-compose up -d pgadmin
+#	docker-compose up -d postgres
+#	docker-compose up -d pgadmin
 	docker-compose up -d db
 	docker-compose up -d tg
 	docker-compose up ml
