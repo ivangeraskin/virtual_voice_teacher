@@ -41,12 +41,12 @@ def speech_frequency(text, duration_sec):
     
     words_per_min = int(len(text.split(' '))*60/duration_sec)
     
-    if words_per_min<90:
-        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Рекомендуем говорить немного динамичнее. Нормальная скорость - 120 слов в минуту.'
-    elif words_per_min>150:
-        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Рекомендуем говорить немного медленнее. Нормальная скорость - 90-150 слов в минуту.'
+    if words_per_min<100:
+        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Рекомендуем говорить немного динамичнее. Нормальная скорость - 100-140 слов в минуту.'
+    elif words_per_min>140:
+        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Рекомендуем говорить немного медленнее. Нормальная скорость - 100-140 слов в минуту.'
     else:
-        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Это в пределах нормы.'
+        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Показатель в пределах нормы.'
         
     return text_for_user + '\n\n'
 
