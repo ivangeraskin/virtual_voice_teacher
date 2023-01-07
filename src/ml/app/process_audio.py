@@ -13,11 +13,12 @@ logger = logging.getLogger(__file__)
 def process(file_pth: str) -> Dict:
     model = get_model()
     mp3_raw_data = prepare_audio_file(audio_file_path=file_pth)
-    recognized_text = recognize_audio(mp3_raw_data, model)
+    recognized_text, duration_sec = recognize_audio(mp3_raw_data, model)
     logger.info(recognized_text)
-    text_for_user = filler_word_analyse(text=recognized_text, filler_words=FILLER_WORLDS)
+    text_freq_analyse = speech_frequency(text, duration_sec)
+    text_filler_analyse = filler_word_analyse(text=recognized_text, filler_words=FILLER_WORLDS)
+    text_for_user = text_freq_analyse + text_filler_analyse
     return {"message": text_for_user}
-
 
 def prepare_audio_file(audio_file_path: str):
     ogg_file = AudioSegment.from_file(audio_file_path)
@@ -33,15 +34,36 @@ def recognize_audio(file_pth, model) -> str:
     model.AcceptWaveform(mp3_file.raw_data)
     result = model.Result()
     text = json.loads(result)["text"]
-    return text
+    duration_sec = mp3_file.duration_seconds
+    return text, duration_sec
+
+def speech_frequency(text, duration_sec):
+    
+    words_per_min = int(len(text.split(' '))*60/duration_sec)
+    
+    if words_per_min<90:
+        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Рекомендуем говорить немного динамичнее. Нормальная скорость - 120 слов в минуту.'
+    elif words_per_min>150:
+        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Рекомендуем говорить немного медленнее. Нормальная скорость - 90-150 слов в минуту.'
+    else:
+        text_for_user = 'Cкорость вашей речи - ' + str(words_per_min) + ' слов в минуту. Это в пределах нормы.'
+        
+    return text_for_user + '\n\n'
 
 def filler_word_analyse(text: str, filler_words: List[str])-> str:
     filler_cnt_dict = {}
 
     # Для каждого слова-паразита считаем кол-во вхождений
     for filler in filler_words:
-        filler_cnt = text.count(' ' + filler + ' ')
-        if filler_cnt > 0:
+        # Если в середине
+        filler_cnt = text.count(' '+filler+' ')
+        # Если в начале
+        if text[:len(filler+' ')] == filler+' ':
+            filler_cnt =+ 1
+        # Если в конце
+        if text[-len(' '+filler):] ==' '+filler:
+            filler_cnt =+ 1 
+        if filler_cnt>0:
             filler_cnt_dict[filler] = filler_cnt
 
     # Сортируем от максимального кол-ва вхождений к минимальному
@@ -64,12 +86,12 @@ def filler_word_analyse(text: str, filler_words: List[str])-> str:
         filler_frequency = filler + ' - ' + str(filler_cnt_dict[filler]) + '\n'
         frequent_fillers = frequent_fillers + filler_frequency
 
-    if all_words == 0:
+    if len(text) == 0:
         text_for_user = 'В записи не обнаружено ни одного слова, предлагаем сделать еще одну попытку. Говорите, не стесняйтесь)'
     elif all_fillers_cnt == 0:
-        text_for_user = 'В записи не обнаружено ни одного мусорного слова. Так держать. Расскажите еще что-нибудь) \n \n' + all_words
+        text_for_user = 'В записи не обнаружено ни одного слова-паразита. Так держать. Расскажите еще что-нибудь) \n \n' + all_words
     elif fillers_pct <= 1:
-        conclusion = 'В вашей речи немного мусорных слов, но кое-что мы нашли. \n \n'
+        conclusion = 'В вашей речи немного слов-паразитов, но кое-что мы нашли. \n \n'
         text_for_user = conclusion + all_words + filler_words_pct + frequent_fillers
     elif 1 < fillers_pct <= 3:
         conclusion = 'Слов-паразитов в вашей речи среднее количество, предлагаем еще потренироваться говорить без них. Продолжайте! \n \n'
