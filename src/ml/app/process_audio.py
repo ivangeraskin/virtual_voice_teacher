@@ -15,7 +15,7 @@ def process(file_pth: str) -> Dict:
     mp3_raw_data = prepare_audio_file(audio_file_path=file_pth)
     recognized_text, duration_sec = recognize_audio(mp3_raw_data, model)
     logger.info(recognized_text)
-    text_freq_analyse = speech_frequency(text, duration_sec)
+    text_freq_analyse = speech_frequency(recognized_text, duration_sec)
     text_filler_analyse = filler_word_analyse(text=recognized_text, filler_words=FILLER_WORLDS)
     text_for_user = text_freq_analyse + text_filler_analyse
     return {"message": text_for_user}
