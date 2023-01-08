@@ -41,7 +41,7 @@ async def on_shutdown(dp):
 
 @dp.message_handler(content_types=ContentType.TEXT)
 async def process_text(message: Message):
-    await message.answer("Привет!")
+    await message.answer("Доброго времени суток! Расскажите о чем-нибудь в аудиосообщении. Рекомендуемое время записи - 1-2 минуты. Выбирайте любую тему: хобби, интересный проект, идеальный отпуск, ...")
 
 async def handle_file(file, file_name: str, path: str):
     await bot.download_file(file_path=file.file_path, destination=f"{path}/{file_name}")
